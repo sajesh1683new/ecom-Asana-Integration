@@ -11,3 +11,9 @@ from fastapi.responses import FileResponse
 app.mount('/demo-store/assets',StaticFiles(directory='backend/app/demo'),name='store-assets')
 @app.get('/demo-store/{path:path}',include_in_schema=False)
 def storefront(path: str): return FileResponse('backend/app/demo/index.html')
+from backend.app.api.changes import router as changes_router
+from fastapi.responses import JSONResponse
+from fastapi import Request
+app.include_router(changes_router)
+@app.exception_handler(ValueError)
+async def invalid(request: Request,exc: ValueError):return JSONResponse(status_code=422,content={'detail':str(exc)})
