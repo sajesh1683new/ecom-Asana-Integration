@@ -6,3 +6,8 @@ app.add_middleware(CORSMiddleware,allow_origins=['http://127.0.0.1:5173','http:/
 def health(): return {'status':'ok','application':'Visual QA Bridge'}
 from backend.app.api.asana import router as asana_router
 app.include_router(asana_router)
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+app.mount('/demo-store/assets',StaticFiles(directory='backend/app/demo'),name='store-assets')
+@app.get('/demo-store/{path:path}',include_in_schema=False)
+def storefront(path: str): return FileResponse('backend/app/demo/index.html')
