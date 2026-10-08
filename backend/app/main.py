@@ -15,5 +15,9 @@ from backend.app.api.changes import router as changes_router
 from fastapi.responses import JSONResponse
 from fastapi import Request
 app.include_router(changes_router)
+from backend.app.api.captures import router as captures_router
+app.include_router(captures_router)
+from backend.app.config import DATA
+app.mount('/files',StaticFiles(directory=str(DATA)),name='local-files')
 @app.exception_handler(ValueError)
 async def invalid(request: Request,exc: ValueError):return JSONResponse(status_code=422,content={'detail':str(exc)})
