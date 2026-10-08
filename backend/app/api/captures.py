@@ -18,7 +18,9 @@ class CaptureRequest(BaseModel):
 def start(body: CaptureRequest,role: str=Depends(current_role)):
     require(role,'QA reviewer','QA lead')
     with session() as s:
-        run=enqueue(s,needed(s,body.change_request_id),body.build_label,body.viewport_profile_ids,role);s.commit();return record(run)
+        change=needed(s,body.change_request_id)
+        if change.status not in ('Ready for QA','Intake incomplete'):raise HTTPException(409,'Initial capture requires Ready for QA. Use the affected-only recheck action after fixes.')
+        run=enqueue(s,change,body.build_label,body.viewport_profile_ids,role);s.commit();return record(run)
 @router.get('/capture-runs/{id}')
 def detail(id: int):
     with session() as s:

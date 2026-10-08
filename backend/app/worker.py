@@ -20,9 +20,12 @@ def run_once() -> bool:
             capture(s,run,run.scope_json)
             from backend.app.services.capture.rules import analyse
             from backend.app.services.capture.visual_diff import analyse_visual
-            analyse(s,run);analyse_visual(s,run)
+            if not run.scope_json.get('test_recipe'):
+                analyse(s,run);analyse_visual(s,run)
+                from backend.app.services.capture.ai_review import analyse_ai
+                analyse_ai(s,run)
             run.status='Completed';run.finished_at=now();run.duration_ms=(time.perf_counter()-started)*1000
-            job.status='Completed';status(s,change,'Capturing','QA reviewer',{'capture_complete':True,'run_id':run.id})
+            job.status='Completed';status(s,change,'Ready for QA' if run.scope_json.get('test_recipe') else 'AI first pass done','QA reviewer',{'capture_complete':True,'run_id':run.id})
             s.commit()
         except Exception as exc:
             s.rollback();job=s.get(m.Job,job_id);run=s.get(m.Run,job.payload_json['run_id']);change=s.get(m.Change,run.change_request_id)

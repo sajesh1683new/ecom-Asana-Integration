@@ -17,6 +17,8 @@ from fastapi import Request
 app.include_router(changes_router)
 from backend.app.api.captures import router as captures_router
 app.include_router(captures_router)
+from backend.app.api.findings import router as findings_router
+app.include_router(findings_router)
 from backend.app.config import DATA
 for folder in ('designs','screenshots'):
     (DATA/folder).mkdir(exist_ok=True)
