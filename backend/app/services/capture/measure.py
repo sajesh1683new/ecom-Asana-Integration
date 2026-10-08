@@ -1,4 +1,5 @@
 """Trusted measurement template; no website or model code is ever evaluated."""
+
 from typing import Any
 from playwright.sync_api import Page
 from backend.app.services.capture.safety import validate_selector
@@ -15,8 +16,10 @@ MEASURE = """roots => roots.flatMap(root => [root, ...root.querySelectorAll('*')
  feature_id:e.dataset.featureId||'',order:Array.from(e.querySelectorAll('[data-feature-id]')).map(c=>c.dataset.featureId)};
 }))"""
 
-def measure(page: Page, selector: str) -> list[dict[str,Any]]:
+
+def measure(page: Page, selector: str) -> list[dict[str, Any]]:
     validate_selector(selector)
-    locator=page.locator(selector)
-    if locator.count()!=1:raise ValueError(f'Selector must identify one changed section: {selector}')
+    locator = page.locator(selector)
+    if locator.count() != 1:
+        raise ValueError(f"Selector must identify one changed section: {selector}")
     return locator.evaluate_all(MEASURE)

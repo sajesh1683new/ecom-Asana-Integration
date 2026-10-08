@@ -4,5 +4,6 @@ services:
     ports: ["8000:8000", "5173:5173"]
     volumes: ["./data:/app/data"]
     environment:
+      DEV_HOST: 0.0.0.0
       ASANA_MODE: mock
       AI_PROVIDER: mock

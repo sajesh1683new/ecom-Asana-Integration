@@ -1,42 +1,361 @@
 """SQLAlchemy declarative models. JSON columns hold versioned structured contracts."""
+
 from typing import Any
 from sqlalchemy import Column, Integer, String, Text, Boolean, JSON, Float
 from backend.app.db import Base, now
 
-def model(class_name: str, table: str, columns: dict[str,Any]) -> Any:
-    return type(class_name,(Base,),{'__tablename__':table,'id':Column(Integer,primary_key=True),**columns})
-def text(default: str='') -> Any: return Column(Text,default=default,nullable=False)
-def json_col(default: Any=dict) -> Any: return Column(JSON,default=default,nullable=False)
-def integer(default: int=0) -> Any: return Column(Integer,default=default,nullable=False)
-def stamp() -> Any: return Column(String,default=now,nullable=False)
 
-User=model('User','users',{'name':text(),'role':text()})
-Change=model('Change','change_requests',{'asana_gid':Column(String,unique=True),'code':text(),'title':text(),'description':text(),'target_url':text(),'status':text('Draft'),'requester_id':integer(),'designer_id':integer(),'qa_lead_id':integer(),'intake_complete':Column(Boolean,default=False),'viewport_ids':json_col(list),'created_at':stamp(),'updated_at':stamp()})
-Section=model('Section','changed_sections',{'change_request_id':integer(),'name':text(),'selector':text(),'design_spec_id':integer(),'notes':text()})
-Recipe=model('Recipe','capture_recipes',{'change_request_id':integer(),'name':text(),'steps_json':json_col(list),'allow_cart_interaction':Column(Boolean,default=False),'version':integer(1)})
-Viewport=model('Viewport','viewport_profiles',{'name':Column(String,unique=True),'width':integer(),'height':integer(),'device_name':Column(String,nullable=True),'is_mobile':Column(Boolean,default=False)})
-Spec=model('Spec','design_specs',{'name':text(),'version':integer(1),'frame_image_path':text(),'spec_json':json_col()})
-Rule=model('Rule','checklist_rules',{'code':text(),'description':text(),'rule_type':text(),'params_json':json_col(),'applies_to':text('all'),'active':Column(Boolean,default=True),'version':integer(1)})
-Run=model('Run','capture_runs',{'change_request_id':integer(),'build_label':text(),'status':text('Queued'),'started_at':stamp(),'finished_at':Column(String,nullable=True),'triggered_by':text(),'duration_ms':Column(Float,default=0),'scope_json':json_col(),'error':text()})
-Screenshot=model('Screenshot','screenshots',{'capture_run_id':integer(),'viewport_profile_id':integer(),'recipe_id':integer(),'kind':text(),'selector':text(),'file_path':text(),'width':integer(),'height':integer(),'sha256':text()})
-Measurement=model('Measurement','dom_measurements',{'screenshot_id':integer(),'selector':text(),'computed_json':json_col()})
-Finding=model('Finding','findings',{'change_request_id':integer(),'capture_run_id':integer(),'source':text(),'source_ref':text(),'title':text(),'description':text(),'element':text(),'viewport':text(),'recipe_id':integer(),'evidence_screenshot_id':integer(),'rule_code':Column(String,nullable=True),'ai_confidence':Column(Float,nullable=True),'status':text('Unconfirmed'),'triage_outcome':text(),'kind':text('question'),'owner_role':text('QA reviewer'),'created_by':text(),'created_at':stamp(),'expected':json_col(),'observed':json_col(),'escaped':Column(Boolean,default=False)})
-Group=model('Group','finding_groups',{'change_request_id':integer(),'label':text(),'state':text('possible'),'rationale':text(),'confirmed_by':text()})
-Member=model('Member','finding_group_members',{'group_id':integer(),'finding_id':integer()})
-Queue=model('Queue','queue_items',{'change_request_id':integer(),'finding_id':integer(),'group_id':integer(),'source_ids':json_col(list),'issue_summary':text(),'status':text('Needs evidence'),'missing_evidence':text(),'next_action':text(),'accountable_role':text('QA reviewer'),'tool_hint':text(),'evidence_ids':json_col(list)})
-Event=model('Event','events',{'entity_type':text(),'entity_id':integer(),'change_request_id':integer(),'from_state':text(),'to_state':text(),'actor_role':text(),'timestamp':stamp(),'minutes_spent':Column(Float,nullable=True),'detail':json_col()})
-Prompt=model('Prompt','prompt_templates',{'name':text(),'version':integer(1),'body':text(),'owner_role':text('QA lead'),'active':Column(Boolean,default=True)})
-SyncLog=model('SyncLog','sync_log',{'direction':text(),'entity':text(),'payload_hash':text(),'result':text(),'detail':json_col(),'created_at':stamp()})
-Job=model('Job','jobs',{'type':text(),'payload_json':json_col(),'status':text('Queued'),'attempts':integer(),'error':text(),'created_at':stamp()})
-Project=model('Project','asana_projects',{'gid':Column(String,unique=True),'name':text(),'workspace':text('Nimbus Sleep Co.')})
-AsanaSection=model('AsanaSection','asana_sections',{'gid':Column(String,unique=True),'project_gid':text(),'name':text()})
-Task=model('Task','asana_tasks',{'gid':Column(String,unique=True),'project_gid':text(),'section_gid':text(),'parent_gid':text(),'name':text(),'notes':text(),'assignee_role':text(),'custom_fields':json_col(),'modified_at':stamp(),'completed':Column(Boolean,default=False),'is_template':Column(Boolean,default=False)})
-Story=model('Story','asana_stories',{'gid':Column(String,unique=True),'task_gid':text(),'text':text(),'author':text(),'source_ref':text(),'created_at':stamp()})
-Attachment=model('Attachment','asana_attachments',{'gid':Column(String,unique=True),'task_gid':text(),'name':text(),'file_path':text()})
-CustomField=model('CustomField','asana_custom_fields',{'gid':Column(String,unique=True),'project_gid':text(),'name':text(),'type':text(),'options':json_col(list)})
-FieldValue=model('FieldValue','asana_custom_field_values',{'task_gid':text(),'field_gid':text(),'value':json_col()})
-Baseline=model('Baseline','baselines',{'change_request_id':integer(),'recipe_id':integer(),'viewport_profile_id':integer(),'screenshot_id':integer(),'browser':text(),'build':text(),'approved_by':text(),'approved_at':stamp()})
-Diff=model('Diff','visual_diffs',{'capture_run_id':integer(),'screenshot_id':integer(),'baseline_id':integer(),'file_path':text(),'changed_percent':Column(Float,default=0),'outside_percent':Column(Float,default=0),'threshold':Column(Float,default=0.5)})
-AIReview=model('AIReview','ai_reviews',{'capture_run_id':integer(),'provider':text(),'model':text(),'prompt_version':integer(),'response':json_col(list),'duration_ms':Column(Float,default=0),'created_at':stamp()})
-Pilot=model('Pilot','pilot_baselines',{'name':text(),'data':json_col()})
-RuleResult=model('RuleResult','rule_results',{'capture_run_id':integer(),'recipe_id':integer(),'viewport_profile_id':integer(),'selector':text(),'rule_code':text(),'rule_version':integer(1),'spec_version':integer(1),'status':text(),'expected':json_col(),'observed':json_col(),'screenshot_id':integer()})
+def model(class_name: str, table: str, columns: dict[str, Any]) -> Any:
+    return type(
+        class_name,
+        (Base,),
+        {"__tablename__": table, "id": Column(Integer, primary_key=True), **columns},
+    )
+
+
+def text(default: str = "") -> Any:
+    return Column(Text, default=default, nullable=False)
+
+
+def json_col(default: Any = dict) -> Any:
+    return Column(JSON, default=default, nullable=False)
+
+
+def integer(default: int = 0) -> Any:
+    return Column(Integer, default=default, nullable=False)
+
+
+def stamp() -> Any:
+    return Column(String, default=now, nullable=False)
+
+
+User = model("User", "users", {"name": text(), "role": text()})
+Change = model(
+    "Change",
+    "change_requests",
+    {
+        "asana_gid": Column(String, unique=True),
+        "code": text(),
+        "title": text(),
+        "description": text(),
+        "target_url": text(),
+        "status": text("Draft"),
+        "requester_id": integer(),
+        "designer_id": integer(),
+        "qa_lead_id": integer(),
+        "intake_complete": Column(Boolean, default=False),
+        "viewport_ids": json_col(list),
+        "created_at": stamp(),
+        "updated_at": stamp(),
+    },
+)
+Section = model(
+    "Section",
+    "changed_sections",
+    {
+        "change_request_id": integer(),
+        "name": text(),
+        "selector": text(),
+        "design_spec_id": integer(),
+        "notes": text(),
+    },
+)
+Recipe = model(
+    "Recipe",
+    "capture_recipes",
+    {
+        "change_request_id": integer(),
+        "name": text(),
+        "steps_json": json_col(list),
+        "allow_cart_interaction": Column(Boolean, default=False),
+        "version": integer(1),
+    },
+)
+Viewport = model(
+    "Viewport",
+    "viewport_profiles",
+    {
+        "name": Column(String, unique=True),
+        "width": integer(),
+        "height": integer(),
+        "device_name": Column(String, nullable=True),
+        "is_mobile": Column(Boolean, default=False),
+    },
+)
+Spec = model(
+    "Spec",
+    "design_specs",
+    {"name": text(), "version": integer(1), "frame_image_path": text(), "spec_json": json_col()},
+)
+Rule = model(
+    "Rule",
+    "checklist_rules",
+    {
+        "code": text(),
+        "description": text(),
+        "rule_type": text(),
+        "params_json": json_col(),
+        "applies_to": text("all"),
+        "active": Column(Boolean, default=True),
+        "version": integer(1),
+    },
+)
+Run = model(
+    "Run",
+    "capture_runs",
+    {
+        "change_request_id": integer(),
+        "build_label": text(),
+        "status": text("Queued"),
+        "started_at": stamp(),
+        "finished_at": Column(String, nullable=True),
+        "triggered_by": text(),
+        "duration_ms": Column(Float, default=0),
+        "scope_json": json_col(),
+        "error": text(),
+    },
+)
+Screenshot = model(
+    "Screenshot",
+    "screenshots",
+    {
+        "capture_run_id": integer(),
+        "viewport_profile_id": integer(),
+        "recipe_id": integer(),
+        "kind": text(),
+        "selector": text(),
+        "file_path": text(),
+        "width": integer(),
+        "height": integer(),
+        "sha256": text(),
+    },
+)
+Measurement = model(
+    "Measurement",
+    "dom_measurements",
+    {"screenshot_id": integer(), "selector": text(), "computed_json": json_col()},
+)
+Finding = model(
+    "Finding",
+    "findings",
+    {
+        "change_request_id": integer(),
+        "capture_run_id": integer(),
+        "source": text(),
+        "source_ref": text(),
+        "title": text(),
+        "description": text(),
+        "element": text(),
+        "viewport": text(),
+        "recipe_id": integer(),
+        "evidence_screenshot_id": integer(),
+        "rule_code": Column(String, nullable=True),
+        "ai_confidence": Column(Float, nullable=True),
+        "status": text("Unconfirmed"),
+        "triage_outcome": text(),
+        "kind": text("question"),
+        "owner_role": text("QA reviewer"),
+        "created_by": text(),
+        "created_at": stamp(),
+        "expected": json_col(),
+        "observed": json_col(),
+        "escaped": Column(Boolean, default=False),
+    },
+)
+Group = model(
+    "Group",
+    "finding_groups",
+    {
+        "change_request_id": integer(),
+        "label": text(),
+        "state": text("possible"),
+        "rationale": text(),
+        "confirmed_by": text(),
+    },
+)
+Member = model("Member", "finding_group_members", {"group_id": integer(), "finding_id": integer()})
+Queue = model(
+    "Queue",
+    "queue_items",
+    {
+        "change_request_id": integer(),
+        "finding_id": integer(),
+        "group_id": integer(),
+        "source_ids": json_col(list),
+        "issue_summary": text(),
+        "status": text("Needs evidence"),
+        "missing_evidence": text(),
+        "next_action": text(),
+        "accountable_role": text("QA reviewer"),
+        "tool_hint": text(),
+        "evidence_ids": json_col(list),
+    },
+)
+Event = model(
+    "Event",
+    "events",
+    {
+        "entity_type": text(),
+        "entity_id": integer(),
+        "change_request_id": integer(),
+        "from_state": text(),
+        "to_state": text(),
+        "actor_role": text(),
+        "timestamp": stamp(),
+        "minutes_spent": Column(Float, nullable=True),
+        "detail": json_col(),
+    },
+)
+Prompt = model(
+    "Prompt",
+    "prompt_templates",
+    {
+        "name": text(),
+        "version": integer(1),
+        "body": text(),
+        "owner_role": text("QA lead"),
+        "active": Column(Boolean, default=True),
+    },
+)
+SyncLog = model(
+    "SyncLog",
+    "sync_log",
+    {
+        "direction": text(),
+        "entity": text(),
+        "payload_hash": text(),
+        "result": text(),
+        "detail": json_col(),
+        "created_at": stamp(),
+    },
+)
+Job = model(
+    "Job",
+    "jobs",
+    {
+        "type": text(),
+        "payload_json": json_col(),
+        "status": text("Queued"),
+        "attempts": integer(),
+        "error": text(),
+        "created_at": stamp(),
+    },
+)
+Project = model(
+    "Project",
+    "asana_projects",
+    {"gid": Column(String, unique=True), "name": text(), "workspace": text("Nimbus Sleep Co.")},
+)
+AsanaSection = model(
+    "AsanaSection",
+    "asana_sections",
+    {"gid": Column(String, unique=True), "project_gid": text(), "name": text()},
+)
+Task = model(
+    "Task",
+    "asana_tasks",
+    {
+        "gid": Column(String, unique=True),
+        "project_gid": text(),
+        "section_gid": text(),
+        "parent_gid": text(),
+        "name": text(),
+        "notes": text(),
+        "assignee_role": text(),
+        "custom_fields": json_col(),
+        "modified_at": stamp(),
+        "completed": Column(Boolean, default=False),
+        "is_template": Column(Boolean, default=False),
+    },
+)
+Story = model(
+    "Story",
+    "asana_stories",
+    {
+        "gid": Column(String, unique=True),
+        "task_gid": text(),
+        "text": text(),
+        "author": text(),
+        "source_ref": text(),
+        "created_at": stamp(),
+    },
+)
+Attachment = model(
+    "Attachment",
+    "asana_attachments",
+    {"gid": Column(String, unique=True), "task_gid": text(), "name": text(), "file_path": text()},
+)
+CustomField = model(
+    "CustomField",
+    "asana_custom_fields",
+    {
+        "gid": Column(String, unique=True),
+        "project_gid": text(),
+        "name": text(),
+        "type": text(),
+        "options": json_col(list),
+    },
+)
+FieldValue = model(
+    "FieldValue",
+    "asana_custom_field_values",
+    {"task_gid": text(), "field_gid": text(), "value": json_col()},
+)
+Baseline = model(
+    "Baseline",
+    "baselines",
+    {
+        "change_request_id": integer(),
+        "recipe_id": integer(),
+        "viewport_profile_id": integer(),
+        "screenshot_id": integer(),
+        "browser": text(),
+        "build": text(),
+        "approved_by": text(),
+        "approved_at": stamp(),
+    },
+)
+Diff = model(
+    "Diff",
+    "visual_diffs",
+    {
+        "capture_run_id": integer(),
+        "screenshot_id": integer(),
+        "baseline_id": integer(),
+        "file_path": text(),
+        "changed_percent": Column(Float, default=0),
+        "outside_percent": Column(Float, default=0),
+        "threshold": Column(Float, default=0.5),
+    },
+)
+AIReview = model(
+    "AIReview",
+    "ai_reviews",
+    {
+        "capture_run_id": integer(),
+        "provider": text(),
+        "model": text(),
+        "prompt_version": integer(),
+        "response": json_col(list),
+        "duration_ms": Column(Float, default=0),
+        "created_at": stamp(),
+    },
+)
+Pilot = model("Pilot", "pilot_baselines", {"name": text(), "data": json_col()})
+RuleResult = model(
+    "RuleResult",
+    "rule_results",
+    {
+        "capture_run_id": integer(),
+        "recipe_id": integer(),
+        "viewport_profile_id": integer(),
+        "selector": text(),
+        "rule_code": text(),
+        "rule_version": integer(1),
+        "spec_version": integer(1),
+        "status": text(),
+        "expected": json_col(),
+        "observed": json_col(),
+        "screenshot_id": integer(),
+    },
+)
