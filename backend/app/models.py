@@ -39,3 +39,4 @@ Baseline=model('Baseline','baselines',{'change_request_id':integer(),'recipe_id'
 Diff=model('Diff','visual_diffs',{'capture_run_id':integer(),'screenshot_id':integer(),'baseline_id':integer(),'file_path':text(),'changed_percent':Column(Float,default=0),'outside_percent':Column(Float,default=0),'threshold':Column(Float,default=0.5)})
 AIReview=model('AIReview','ai_reviews',{'capture_run_id':integer(),'provider':text(),'model':text(),'prompt_version':integer(),'response':json_col(list),'duration_ms':Column(Float,default=0),'created_at':stamp()})
 Pilot=model('Pilot','pilot_baselines',{'name':text(),'data':json_col()})
+RuleResult=model('RuleResult','rule_results',{'capture_run_id':integer(),'recipe_id':integer(),'viewport_profile_id':integer(),'selector':text(),'rule_code':text(),'rule_version':integer(1),'spec_version':integer(1),'status':text(),'expected':json_col(),'observed':json_col(),'screenshot_id':integer()})

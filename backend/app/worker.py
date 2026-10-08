@@ -18,6 +18,9 @@ def run_once() -> bool:
         run.status='Running';s.commit()
         try:
             capture(s,run,run.scope_json)
+            from backend.app.services.capture.rules import analyse
+            from backend.app.services.capture.visual_diff import analyse_visual
+            analyse(s,run);analyse_visual(s,run)
             run.status='Completed';run.finished_at=now();run.duration_ms=(time.perf_counter()-started)*1000
             job.status='Completed';status(s,change,'Capturing','QA reviewer',{'capture_complete':True,'run_id':run.id})
             s.commit()

@@ -18,6 +18,8 @@ app.include_router(changes_router)
 from backend.app.api.captures import router as captures_router
 app.include_router(captures_router)
 from backend.app.config import DATA
-app.mount('/files',StaticFiles(directory=str(DATA)),name='local-files')
+for folder in ('designs','screenshots'):
+    (DATA/folder).mkdir(exist_ok=True)
+    app.mount('/files/'+folder,StaticFiles(directory=str(DATA/folder)),name='local-'+folder)
 @app.exception_handler(ValueError)
 async def invalid(request: Request,exc: ValueError):return JSONResponse(status_code=422,content={'detail':str(exc)})
