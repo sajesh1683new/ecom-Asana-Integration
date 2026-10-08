@@ -38,6 +38,7 @@ def populate(s,change_id: int):
     rows=[]
     for f in findings:
         q=s.scalar(select(m.Queue).filter_by(change_request_id=change_id,finding_id=f.id))
+        if q and f.status=='Fixed verified':rows.append(q);continue
         if q and q.group_id:continue
         if q and q.status in ('Fixed: awaiting recheck','Reopened'):rows.append(q);continue
         proposal=mock_proposal(f).model_dump()

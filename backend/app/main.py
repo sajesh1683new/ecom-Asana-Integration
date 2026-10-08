@@ -21,6 +21,8 @@ from backend.app.api.findings import router as findings_router
 app.include_router(findings_router)
 from backend.app.api.queue import router as queue_router
 app.include_router(queue_router)
+from backend.app.api.release import router as release_router
+app.include_router(release_router)
 from backend.app.config import DATA
 for folder in ('designs','screenshots'):
     (DATA/folder).mkdir(exist_ok=True)

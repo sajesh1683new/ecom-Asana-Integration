@@ -27,6 +27,7 @@ class MockAsanaClient:
         existing=self.s.scalar(select(m.Story).filter_by(task_gid=gid,text=text))
         return record(existing or add(self.s,m.Story,gid=self.gid(),task_gid=gid,text=text,author='Visual QA Bridge'))
     def list_comments(self,gid: str) -> list[dict[str,Any]]:return all_rows(self.s,m.Story,task_gid=gid)
+    def list_subtasks(self,gid: str) -> list[dict[str,Any]]:return all_rows(self.s,m.Task,parent_gid=gid)
     def add_attachment(self,gid: str,file_path: str) -> dict[str,Any]:
         old=self.s.scalar(select(m.Attachment).filter_by(task_gid=gid,file_path=file_path))
         return record(old or add(self.s,m.Attachment,gid=self.gid(),task_gid=gid,name=Path(file_path).name,file_path=file_path))
@@ -34,7 +35,7 @@ class MockAsanaClient:
         parent=self.get_task(parent_gid)
         return self.create_task(parent_gid=parent_gid,project_gid=parent['project_gid'],section_gid='1004',**values)
     def set_custom_field(self,gid: str,field_gid: str,value: Any) -> dict[str,Any]:
-        task=self.get_task(gid);fields={**task['custom_fields'],field_gid:value}
+        task=self.get_task(gid);field=self.s.scalar(select(m.CustomField).filter_by(gid=field_gid));fields={**task['custom_fields'],field.name if field else field_gid:value}
         row=self.s.scalar(select(m.FieldValue).filter_by(task_gid=gid,field_gid=field_gid))
         if row:row.value=value
         else:add(self.s,m.FieldValue,task_gid=gid,field_gid=field_gid,value=value)

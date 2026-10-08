@@ -22,10 +22,14 @@ def run_once() -> bool:
             from backend.app.services.capture.visual_diff import analyse_visual
             if not run.scope_json.get('test_recipe'):
                 analyse(s,run);analyse_visual(s,run)
-                from backend.app.services.capture.ai_review import analyse_ai
-                analyse_ai(s,run)
+                if not run.scope_json.get('recheck_queue_ids'):
+                    from backend.app.services.capture.ai_review import analyse_ai
+                    analyse_ai(s,run)
+                else:
+                    from backend.app.services.recheck import finish_recheck
+                    finish_recheck(s,run)
             run.status='Completed';run.finished_at=now();run.duration_ms=(time.perf_counter()-started)*1000
-            job.status='Completed';status(s,change,'Ready for QA' if run.scope_json.get('test_recipe') else 'AI first pass done','QA reviewer',{'capture_complete':True,'run_id':run.id})
+            job.status='Completed';status(s,change,'Recheck' if run.scope_json.get('recheck_queue_ids') else 'Ready for QA' if run.scope_json.get('test_recipe') else 'AI first pass done','QA reviewer',{'capture_complete':True,'run_id':run.id})
             s.commit()
         except Exception as exc:
             s.rollback();job=s.get(m.Job,job_id);run=s.get(m.Run,job.payload_json['run_id']);change=s.get(m.Change,run.change_request_id)

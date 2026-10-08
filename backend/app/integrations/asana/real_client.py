@@ -29,6 +29,7 @@ class RealAsanaClient:
     def create_task(self,**values: Any) -> dict[str,Any]:return self.request('POST','tasks',json={'data':values})['data']
     def update_task(self,gid: str,**values: Any) -> dict[str,Any]:return self.request('PUT',f'tasks/{gid}',json={'data':values})['data']
     def list_comments(self,gid: str) -> list[dict[str,Any]]:return self.listing(f'tasks/{gid}/stories',opt_fields='gid,text,created_by.name')
+    def list_subtasks(self,gid: str) -> list[dict[str,Any]]:return self.listing(f'tasks/{gid}/subtasks',opt_fields='gid,name,notes,completed')
     def add_comment(self,gid: str,text: str) -> dict[str,Any]:return self.request('POST',f'tasks/{gid}/stories',json={'data':{'text':text}})['data']
     def add_attachment(self,gid: str,file_path: str) -> dict[str,Any]:
         with Path(file_path).open('rb') as f:return self.request('POST','attachments',data={'parent':gid},files={'file':(Path(file_path).name,f,'image/png')})['data']
