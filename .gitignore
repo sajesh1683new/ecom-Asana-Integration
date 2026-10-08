@@ -1,0 +1,13 @@
+.env
+.venv/
+node_modules/
+dist/
+data/*
+!data/.gitkeep
+legacy-prototype/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.pnpm-store/
+*.log
